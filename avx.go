@@ -42,7 +42,7 @@ const
 )
 const
 (
-	Version = "#HC01"
+	Version = "#HC03"
 )
 type book struct {
 	chapterIdx uint16
@@ -387,7 +387,9 @@ func bookPreamble(name string, chapter byte, session string) string {
 	bookChapter := bible[name].name + " " + strconv.FormatUint(uint64(chapter), 10);
 	bkCh := (uint64(bible[name].bookNum) * 0x10) + uint64(chapter);
 	encodedBookChapter := "AV" + strings.ToUpper(strconv.FormatUint(bkCh, 0x10))
-	preamble := "<html><head><title>" + bookChapter + "</title>"
+
+	preamble := "<!DOCTYPE html>\n<html><head><title>" + bookChapter + "</title>" + "<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js\"></script> <script> $('document').ready(function(){ if (parent != null) { parent.document.getElementById('avx').style.height = (document['body'].offsetHeight+50) + 'px'; } }); </script>" 
+
 	if (len(cssDir) > 0) {
 		preamble += "<link rel=\"stylesheet\" type=\"text/css\" href=\"/css/AV-Baseline.css\" media=\"screen\" />"
 		if (len(session) > 0) {
