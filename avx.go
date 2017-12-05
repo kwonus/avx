@@ -42,7 +42,7 @@ const
 )
 const
 (
-	Version = "#HC03"
+	Version = "#HC05"
 )
 type book struct {
 	chapterIdx uint16
@@ -438,10 +438,23 @@ func showBook(book string, w http.ResponseWriter, r *http.Request) {
 	offset := getChapterIndex(bk, chapter)
 	io.WriteString(w, bookPreamble(book, chapter, stylesheet))
 	stop := false
+	v := byte(0);
 	for record := getBibleText(offset); (record.wordKey != 0xFFFF) && !stop; record = getBibleText(0xFFFFFFFF) {
+		eov := ((record.transCase & EndOfVerse) == EndOfVerse)
+//		bov := ((record.transCase & BeginingOfVerse) == BeginingOfVerse)
 		word := getWord(record, bk, true)
 		io.WriteString(w, word)
-		stop = (record.transCase & EndOfChapter == EndOfChapter)
+//		if bov {
+//			v++
+//		}
+		if eov {
+			v++
+			if (bk.bookNum == 66) && (chapter == 22) && (v == 20) {
+				stop = true; // bug at end-of-bible: fix it here
+			} else {
+				stop = ((record.transCase&EndOfChapter == EndOfChapter))
+			}
+		}
 	}
 	io.WriteString(w, bookPostamble())
 }
