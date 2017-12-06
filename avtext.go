@@ -375,7 +375,20 @@ func bookPreamble(name string, chapter byte, session string) string {
 	bkCh := (uint64(bible[name].bookNum) * 0x10) + uint64(chapter);
 	encodedBookChapter := "AV" + strings.ToUpper(strconv.FormatUint(bkCh, 0x10))
 
-	preamble := "<!DOCTYPE html>\n<html><head><title>" + bookChapter + "</title>" + "<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js\"></script> <script> $('document').ready(function(){ if (parent != null) { parent.document.getElementById('av').style.height = (document['body'].offsetHeight+50) + 'px'; } }); </script>"
+	preamble := "<!DOCTYPE html>\n<html><head><title>" + bookChapter + "</title>"
+	preamble += "<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js\"></script> <script>"
+	preamble += "\nfunction sleep(ms) {"
+  	preamble += "\n\t\treturn new Promise(resolve => setTimeout(resolve, ms));"
+  	preamble += "\n}"
+	preamble += "\n$('document').ready(function(){"
+	preamble += "\n\tif (parent != null) {"
+	preamble += "\n\t\tvar delayed = !!window.chrome ? 750 : 5;"
+	preamble += "\n\t\tsleep(delayed).then(() => {"
+	preamble += "\n\t\t\tparent.document.getElementById('av').style.height = (document['body'].offsetHeight+50) + 'px';"
+	preamble += "\n\t\t});"
+	preamble += "\n\t}";
+	preamble += "\n});";
+	preamble += "\n</script>" 
 
 	if (len(cssDir) > 0) {
 		preamble += "<link rel=\"stylesheet\" type=\"text/css\" href=\"/css/AV-Baseline.css\" media=\"screen\" />"
