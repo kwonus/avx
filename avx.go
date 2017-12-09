@@ -42,7 +42,7 @@ const
 )
 const
 (
-	Version = "#HC05"
+	Version = "#HC09"
 )
 type book struct {
 	chapterIdx uint16
@@ -394,12 +394,8 @@ func bookPreamble(name string, chapter byte, session string) string {
   	preamble += "\n\t\treturn new Promise(resolve => setTimeout(resolve, ms));"
   	preamble += "\n}"
 	preamble += "\n$('document').ready(function(){"
-	preamble += "\n\tif (parent != null) {"
-	preamble += "\n\t\tvar delayed = !!window.chrome ? 750 : 5;"
-	preamble += "\n\t\tsleep(delayed).then(() => {"
-	preamble += "\n\t\t\tparent.document.getElementById('avx').style.height = (document['body'].offsetHeight+50) + 'px';"
-	preamble += "\n\t\t});"
-	preamble += "\n\t}";
+	preamble += "\n\tif (parent != null && !!!window.chrome) {"
+	preamble += "\n\t\t\tparent.document.getElementById('av').style.height = (document['body'].offsetHeight+50) + 'px';"
 	preamble += "\n});";
 	preamble += "\n</script>" 
 
