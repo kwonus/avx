@@ -391,8 +391,9 @@ func bookPreamble(name string, chapter byte, session string) string {
 	preamble := "<!DOCTYPE html>\n<html><head><title>" + bookChapter + "</title>"
 	preamble += "<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js\"></script> <script>"
 	preamble += "\n$('document').ready(function(){"
-	preamble += "\n\tvar chromeMac = (navigator.platform.toUpperCase().indexOf('MAC')>=0) && !!window.chrome;"
-	preamble += "\n\tif (parent != null && !chromeMac) {"
+	preamble += "\n\tvar chrome = !!window.chrome;"
+	preamble += "\n\tvar mac = (navigator.platform.toUpperCase().indexOf('MAC')>=0);"
+	preamble += "\n\tif (parent != null && !(chrome || mac)) {"
 	preamble += "\n\t\t\tparent.document.getElementById('av').style.height = (document['body'].offsetHeight+50) + 'px';"
 	preamble += "\n});";
 	preamble += "\n</script>" 
