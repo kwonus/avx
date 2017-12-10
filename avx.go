@@ -25,7 +25,7 @@ const
 	PUNCcomma 		    = 0x40
 	PUNCcolon      	    = 0x60
 	PUNCpossessive    	= 0x10
-	PUNCparagraph       = 0x08
+	ENDparenthetical    = 0x0C
 	MODEparenthetical   = 0x04
 	MODEitalics   	    = 0x02
 	MODEjesus      	    = 0x01
@@ -42,7 +42,7 @@ const
 )
 const
 (
-	Version = "#HC09"
+	Version = "#HC10"
 )
 type book struct {
 	chapterIdx uint16
@@ -738,7 +738,7 @@ func getWord(text bibleText, bk book, html bool) string {
 				word += "]"
 			}
 		}
-		if (text.puncuation&MODEparenthetical != MODEparenthetical) && (prev.puncuation&MODEparenthetical == MODEparenthetical) {
+		if (text.puncuation&ENDparenthetical == ENDparenthetical) {
 			word += ")"
 		}
 	}
