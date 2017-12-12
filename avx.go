@@ -417,10 +417,11 @@ func showBook(book string, w http.ResponseWriter, r *http.Request) {
 
 	parameters := strings.Split(spec, "?")
 	stylesheet := ""
+	session := ""
 
 	if (len(parameters) == 2) {
 		spec = parameters[0];
-		session := parameters[1]
+		session = parameters[1]
 		anchors := strings.Split(spec, "#")
 		if (len(anchors) >= 2) {
 			session = anchors[0]
@@ -430,10 +431,35 @@ func showBook(book string, w http.ResponseWriter, r *http.Request) {
 				spec = anchors[0]
 			}
 		}
-		stylesheet = getStylesheet(session)
+		parameters = strings.Split(session, "&");
+		if (len(parameters) >= 2) {
+			session = parameters[0]		// peel off the session parameter
+		}
 	}
 	parts := strings.Split(spec, "/")
 	chapter := byte(1)
+	avtext := false
+	diffs := false;
+
+	for i := 0; i < len(parameters); i++ {
+		switch strings.ToLower(parameters[i]) {
+		case "avx": 	    avtext = false;		// this is the default avx behavior
+							if i == 0 {
+								session = ""
+							}
+		case "av": 	    	avtext = true;
+							if i == 0 {
+								session = ""
+							}
+		case "diff": 	    diffs = true;
+							if i == 0 {
+								session = ""
+							}
+		}
+	}
+	if len(session) > 0 {
+		stylesheet = getStylesheet(session)
+	}
 
 	if len(parts) >= 3 {
 		c, err := strconv.Atoi(parts[2])
@@ -450,11 +476,12 @@ func showBook(book string, w http.ResponseWriter, r *http.Request) {
 	for record := getBibleText(offset); (record.wordKey != 0xFFFF) && !stop; record = getBibleText(0xFFFFFFFF) {
 		eov := ((record.transCase & EndOfVerse) == EndOfVerse)
 //		bov := ((record.transCase & BeginingOfVerse) == BeginingOfVerse)
-		word := getWord(record, bk, true)
+		word := getWord(record, !avtext, bk,true, diffs)
 		io.WriteString(w, word)
 //		if bov {
 //			v++
 //		}
+
 		if eov {
 			v++
 			if (bk.bookNum == 66) && (chapter == 22) && (v == 20) {
@@ -609,12 +636,18 @@ func expandHyphens(input [] byte) []byte {
 	}
 	return input
 }
-func getLex(key uint16) string {
+func getLex(key uint16, isAVX bool) (string, bool) {
 	if (key >= 1) && (key <= maxKey) {
 		find := key & uint16(0x3FFF);	// strip off capitolization-bits, if present
-		return avx[find]
+		modern := avx[find]
+		legacy := kjv[find]
+
+		if isAVX {
+			return modern, (modern != legacy)
+		}
+		return legacy, (modern != legacy)
 	}
-	return ""
+	return "", true
 }
 func avCompareString(testStr string, lexStr string) bool {	// assume testStr is already lowercase
 	size := len(lexStr)
@@ -647,7 +680,7 @@ func reverseLex(word string) uint16 {
 }
 var currentVerse byte
 var prev bibleText
-func getWord(text bibleText, bk book, html bool) string {
+func getWord(text bibleText, modern bool, bk book, html bool, bold bool) string {
 	begVerse   := (text.transCase & VerseTransition)   == BeginingOfVerse
 	endVerse   := (text.transCase & VerseTransition)   == EndOfVerse
 	begChapter := (text.transCase & ChapterTransition) == BeginingOfChapter
@@ -661,7 +694,7 @@ func getWord(text bibleText, bk book, html bool) string {
 	}
 	widx ++;
 	key := text.wordKey & 0x3FFF
-	word := getLex(key)
+	word, diff := getLex(key, modern)
 	caps := text.wordKey & 0xC000
 	if caps != 0 {
 		if caps == 0x4000 {
@@ -693,6 +726,9 @@ func getWord(text bibleText, bk book, html bool) string {
 		key := text.wordKey & 0x3FFF
 		kstr := strings.ToUpper(strconv.FormatInt(int64(key),  0x10))
 		wstr := strings.ToUpper(strconv.FormatInt(int64(widx), 36))
+		if bold && diff {
+			word = "<b>" + word + "</b>"
+		}
 		word = "<span id=\"W" + wstr + "\" class=\"K" + kstr + "\" strongs=\"" + sstr + "\">" + word + decor[key] + "</span>"
 	}
 	if (begChapter) {
@@ -757,6 +793,7 @@ func getWord(text bibleText, bk book, html bool) string {
 		}
 	}
 	prev = text
+
 	return word
 }
 var books []book;
@@ -764,6 +801,7 @@ var bible map[string]book
 var maxKey uint16
 var lex map[uint16]string
 var avx map[uint16]string
+var kjv map[uint16]string
 var decor map[uint16]string
 var router map[string]func(http.ResponseWriter, *http.Request)
 var sdkDir string
@@ -826,6 +864,7 @@ func main() {	// Arguments SDK_DIR  CSS_DIR
 	maxKey = 0;
 	lex = make(map[uint16]string)
 	avx = make(map[uint16]string)
+	kjv = make(map[uint16]string)
 	decor = make(map[uint16]string)
 	flx, err := os.Open(sdkDir + "/AVX-Lexicon.VLT")
 	check(err)
@@ -847,6 +886,7 @@ func main() {	// Arguments SDK_DIR  CSS_DIR
 			buffer[cnt] = 0 				// null-terminate
 			word = string(buffer[0:n:n])
 		}
+		kjv[key] = word;
 		modern := word
 		diff := false;
 
